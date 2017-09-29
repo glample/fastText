@@ -144,45 +144,81 @@ uint32_t Dictionary::hash(const std::string& str) const {
 void Dictionary::computeSubwords(const std::string& word,
                                std::vector<int32_t>& ngrams,
                                std::vector<std::string>& substrings) const {
-  for (size_t i = 0; i < word.size(); i++) {
-    std::string ngram;
-    if ((word[i] & 0xC0) == 0x80) continue;
-    for (size_t j = i, n = 1; j < word.size() && n <= args_->maxn; n++) {
-      ngram.push_back(word[j++]);
-      while (j < word.size() && (word[j] & 0xC0) == 0x80) {
-        ngram.push_back(word[j++]);
-      }
-      if (n >= args_->minn && !(n == 1 && (i == 0 || j == word.size()))) {
-        int32_t h = hash(ngram) % args_->bucket;
-        ngrams.push_back(nwords_ + h);
-        substrings.push_back(ngram);
-      }
-    }
+  size_t pos1 = 0;
+  size_t pos2 = 0;
+  std::string token;
+  while ((pos2 = word.find("@@", pos1)) != std::string::npos) {
+    token = word.substr(pos1, pos2 - pos1);
+    // std::cout << token << std::endl;
+    int32_t h = hash(token) % args_->bucket;
+    ngrams.push_back(nwords_ + h);
+    substrings.push_back(token);
+    pos1 = pos2 + 2;
   }
+  // if we did not find "@@", it means the word is a single BPE subword
+  // if (pos1 >= 0) {
+  token = word.substr(pos1);
+  // std::cout << token << std::endl;
+  int32_t h = hash(token) % args_->bucket;
+  ngrams.push_back(nwords_ + h);
+  substrings.push_back(token);
+  // }
+  // for (size_t i = 0; i < word.size(); i++) {
+  //   std::string ngram;
+  //   if ((word[i] & 0xC0) == 0x80) continue;
+  //   for (size_t j = i, n = 1; j < word.size() && n <= args_->maxn; n++) {
+  //     ngram.push_back(word[j++]);
+  //     while (j < word.size() && (word[j] & 0xC0) == 0x80) {
+  //       ngram.push_back(word[j++]);
+  //     }
+  //     if (n >= args_->minn && !(n == 1 && (i == 0 || j == word.size()))) {
+  //       int32_t h = hash(ngram) % args_->bucket;
+  //       ngrams.push_back(nwords_ + h);
+  //       substrings.push_back(ngram);
+  //     }
+  //   }
+  // }
 }
 
 void Dictionary::computeSubwords(const std::string& word,
                                std::vector<int32_t>& ngrams) const {
-  for (size_t i = 0; i < word.size(); i++) {
-    std::string ngram;
-    if ((word[i] & 0xC0) == 0x80) continue;
-    for (size_t j = i, n = 1; j < word.size() && n <= args_->maxn; n++) {
-      ngram.push_back(word[j++]);
-      while (j < word.size() && (word[j] & 0xC0) == 0x80) {
-        ngram.push_back(word[j++]);
-      }
-      if (n >= args_->minn && !(n == 1 && (i == 0 || j == word.size()))) {
-        int32_t h = hash(ngram) % args_->bucket;
-        ngrams.push_back(nwords_ + h);
-      }
-    }
+  size_t pos1 = 0;
+  size_t pos2 = 0;
+  std::string token;
+  while ((pos2 = word.find("@@", pos1)) != std::string::npos) {
+    token = word.substr(pos1, pos2 - pos1);
+    // std::cout << token << std::endl;
+    int32_t h = hash(token) % args_->bucket;
+    ngrams.push_back(nwords_ + h);
+    pos1 = pos2 + 2;
   }
+  // if we did not find "@@", it means the word is a single BPE subword
+  // if (pos1 >= 0) {
+  token = word.substr(pos1);
+  // std::cout << token << std::endl;
+  int32_t h = hash(token) % args_->bucket;
+  ngrams.push_back(nwords_ + h);
+  // }
+  // for (size_t i = 0; i < word.size(); i++) {
+  //   std::string ngram;
+  //   if ((word[i] & 0xC0) == 0x80) continue;
+  //   for (size_t j = i, n = 1; j < word.size() && n <= args_->maxn; n++) {
+  //     ngram.push_back(word[j++]);
+  //     while (j < word.size() && (word[j] & 0xC0) == 0x80) {
+  //       ngram.push_back(word[j++]);
+  //     }
+  //     if (n >= args_->minn && !(n == 1 && (i == 0 || j == word.size()))) {
+  //       int32_t h = hash(ngram) % args_->bucket;
+  //       ngrams.push_back(nwords_ + h);
+  //     }
+  //   }
+  // }
 }
 
 void Dictionary::initNgrams() {
   for (size_t i = 0; i < size_; i++) {
     std::string word = BOW + words_[i].word + EOW;
-    words_[i].subwords.push_back(i);
+    // words_[i].subwords.push_back(i);
     computeSubwords(word, words_[i].subwords);
   }
 }
